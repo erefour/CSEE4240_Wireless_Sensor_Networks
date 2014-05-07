@@ -1,0 +1,37 @@
+
+package ....git file location
+
+import java.io.IOException
+
+import org.apache.http
+public class Gateway {
+
+	/**
+	 * @param args
+	 */
+	while (true){
+		Thread.sleep(1000);	//only execute one time a second (Better sugg
+		try{
+			XbeeResponse response = xbee.getResponse(10);
+		}
+		catch(Exception e){
+			
+		}
+		
+		
+		//Poll the Server for the status of each of the motes in our network
+		String httpResponse = Request.Get("http://....php" + 
+				"password=penigun&").execute().returnContent().asString();
+		System.out.println(httpResponse);
+		JsonParser parser = new JsonParser();
+		JsnoElement f = parser.parse(httpResponse);
+		JsonObject j = f.getAsJsonObject();
+		System.out.println(j.get("succes").getAsBoolean()); //asking json object to get the field "succes" from database
+		
+	}
+	finally{
+		if(xbee.isConnected()){
+			xbee.close();
+		}
+	}
+}

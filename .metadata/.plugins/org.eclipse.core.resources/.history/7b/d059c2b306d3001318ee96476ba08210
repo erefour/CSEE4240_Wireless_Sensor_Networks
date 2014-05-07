@@ -1,0 +1,144 @@
+package CSEE4240_FinalProjec;
+
+//package ....git file location
+//http://www.bar54.de/2011/03/eclipse-log4j-properties-for-the-whole-workspace/ for log4j ERROR
+
+import java.io.IOException;
+import java.net.URLEncoder;
+
+import org.apache.http.*;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.fluent.Form;
+import org.apache.http.client.fluent.Request;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
+import com.google.gson.*;
+import com.rapplogic.xbee.api.ApiId;
+import com.rapplogic.xbee.api.AtCommand;
+import com.rapplogic.xbee.api.XBee;
+import com.rapplogic.xbee.api.XBeeResponse;
+import com.rapplogic.xbee.api.zigbee.ZNetRxResponse;
+import com.rapplogic.xbee.api.zigbee.ZNetTxRequest;
+import com.rapplogic.xbee.util.ByteUtils;
+
+
+public class Gateway{
+
+	XBee xbee = new XBee();
+	
+	public Gateway() throws Exception{
+	try{
+		xbee.open("COM4", 9600);
+	
+		while (true){
+			Thread.sleep(100);	//only execute one time a second (Better sugg
+			try{
+				System.out.println("Beginning ...");
+				XBeeResponse response = xbee.getResponse();
+				System.out.println("Beginning 2 ...");
+				if(response.getApiId() == ApiId.ZNET_RX_RESPONSE){
+					//Successfully received a ZNET RX packet
+					ZNetRxResponse rxPacket =(ZNetRxResponse) response;
+					System.out.println("Received an RX packet");
+					System.out.println("Address of RX Sender: " + rxPacket.getRemoteAddress64());
+					System.out.println("Address of RX Sender as a string: " + URLEncoder.encode(rxPacket.getRemoteAddress64().toString(), "UTF-8"));				//TODO: make a variable to store the 64bit Address of the xbee radio in the format needed to store in the database 
+					
+					int[] dataRX =rxPacket.getData();
+					System.out.println(dataRX.length);
+					System.out.println("Data (temp): " + dataRX[0] + ", " + dataRX[1]);
+					System.out.println("Data (delimiter'11'): " + dataRX[2] + ", " + dataRX[3]);
+					System.out.println("Data (humidity): " + dataRX[4] + ", " + dataRX[5]);
+				
+					String tempStr ="", humidityStr ="", pressureStr ="", gps=""; 
+					
+					//Temperature value is dataRX[0,1] (MSB, LSB)
+					if(dataRX[0] !=0){
+						tempStr += dataRX[0] +"";
+					}
+					tempStr += dataRX[1] + "";
+					System.out.println("tempSTR = " + tempStr);
+					
+					//Humidity value is dataRX[2,3] (MSB, LSB)
+					if(dataRX[2] !=0){
+						humidityStr += dataRX[2] +"";
+					}
+					humidityStr += dataRX[3] + "";
+					System.out.println("humidityStr = " + humidityStr);
+					
+					
+					
+					/*	
+					int readingRXData = dataRX[0] | dataRX[1] <<8;
+					System.out.println("Reading of RX Data[]: " + readingRXData);
+				*/	
+					//Connecting to the Database PHP File to access the database in order to store data sent from the radio
+					//into the appropriate tables 
+					System.out.println("before php ...");
+					String httpResponse = Request.Get("http://sensornetworks.engr.uga.edu/sp14/examples/testingExampleEric.php?" 
+								//+ "password=" 
+							/*	+"mote_id =" + 2 +"&"
+								+ "radio_address =" + rxPacket.getRemoteAddress64()+"&" //TODO: Set equal to the variable that stored the 64 bit addr.
+								+ "temperature =" + tempStr +"&"	//TODO: Set equal to the data for temperature
+								+ "humidity =" + humidityStr +"&"
+								+ "pressure ="+" idk" +"&"
+								+ "gps =" + "SLC")
+							*/
+								).execute().returnContent().asString();
+					
+					System.out.println("after php ...");
+						//NOTE: mote_id is determined on the PHP File using the xbee_address
+					//"password=penigun&").execute().returnContent().asString();
+				System.out.println("SQL Query = " +httpResponse);
+				
+				}else{
+					System.out.println("Did not receive a packet");
+				}
+				
+			} //Inner try
+			catch(Exception e){
+			}//catch
+			
+			//Poll the Server for the status of each of the motes in our network
+			/*	String httpResponse = Request.Get("http://localhost/logSensorData.php" + 
+						"password=").execute().returnContent().asString();
+						//"password=penigun&").execute().returnContent().asString();
+				System.out.println(httpResponse);
+				JsonParser parser = new JsonParser();
+				JsonElement f = parser.parse(httpResponse);
+				JsonObject j = f.getAsJsonObject();
+				System.out.println(j.get("succes").getAsBoolean()); //asking json object to get the field "succes" from database
+				JsonArray motes = j.get("data").getAsJsonArray(); //Thats the field name being returned from db query (have to write that in php file)
+				for(int i -0li<motes.size();i++){
+					//JsonObject obj = motes.get(i).getAsJsonOnject; ==replace motes.get... with just obj
+					String radio_address =motes.get(i).getAsJsonObject().get("radio_address").getAsString(); //System.out.println(motes...
+					JsonElement mailbox = obj.get("mailbox");
+						
+					if(!mailbox.isJsonNull()){
+							XBeeAddress64 xbeeAddr64 = new XBeeAddress64 //Enter the radio address in db as "00 13 A2 00 40 86 83 9D" so it'll be easily to use as a paramater in the XBeeAdd64 constructuer (int[])
+							ZNetTxRequest tx = new ZNetTxRequest(dest. pa_)
+							String message = mailbox.getAsString(); 
+							System.out.println(message);
+					}
+					int light_status = motes.get(i).getAsJSonObject().get("light").getAsInt();
+					System.out.println(light_status);
+					//NOTE that these mailbox, light, radio_addr, etc are all columns inside Dr. Johnsen's db--in the mote table
+				}
+			*/
+			//After polling, we need to create an XBee Transmit package to send to the mote
+			
+		} //While
+	}//First Try
+  	finally{
+		if(xbee.isConnected()){
+			xbee.close();
+		}
+	}//finally
+	}  //(Public Gateway throws)
+	
+	public static void main(String[] args) throws Exception{
+		//PropertyConfigurator.configure(args[0]);
+		new Gateway();
+	}
+	
+}

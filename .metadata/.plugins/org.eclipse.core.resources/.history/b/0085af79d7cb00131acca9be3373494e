@@ -1,0 +1,57 @@
+
+package ....git file location
+
+import java.io.IOException
+
+import org.apache.http
+public class Gateway {
+
+	/**
+	 * @param args
+	 */
+	while (true){
+		Thread.sleep(1000);	//only execute one time a second (Better sugg
+		try{
+			XbeeResponse response = xbee.getResponse(10);
+		}
+		catch(Exception e){
+			
+		}
+		
+		
+		//Poll the Server for the status of each of the motes in our network
+		String httpResponse = Request.Get("http://....php" + 
+				"password=penigun&").execute().returnContent().asString();
+		System.out.println(httpResponse);
+		JsonParser parser = new JsonParser();
+		JsnoElement f = parser.parse(httpResponse);
+		JsonObject j = f.getAsJsonObject();
+		System.out.println(j.get("succes").getAsBoolean()); //asking json object to get the field "succes" from database
+		JsonArray motes = j.get("data").getAsJsonArray(); //Thats the field name being returned from db query (have to write that in php file)
+		for(int i -0li<motes.size();i++){
+			//JsonObject obj = motes.get(i).getAsJsonOnject; ==replace motes.get... with just obj
+			String radio_address =motes.get(i).getAsJsonObject().get("radio_address").getAsString(); //System.out.println(motes...
+			JsonElement mailbox = obj.get("mailbox");
+			
+			
+			if(!mailbox.isJsonNull()){
+					XbeeAddress64 xbeeAddr64 = new XBeeAddress64 //Enter the radio address in db as "00 13 A2 00 40 86 83 9D" so it'll be easily to use as a paramater in the XBeeAdd64 constructuer (int[])
+					ZNetTxRequest tx = new ZNetTxRequest(dest. pa_)
+					String message = mailbox.getAsString(); 
+					System.out.println(message);
+			}
+			int light_status = motes.get(i).getAsJSonObject().get("light").getAsInt();
+			System.out.println(light_status);
+			//NOTE that these mailbox, light, radio_addr, etc are all columns inside Dr. Johnsen's db--in the mote table
+		}
+	
+		
+		
+	//After polling, we need to create an XBee Transmit package to send to the mote
+	}
+	finally{
+		if(xbee.isConnected()){
+			xbee.close();
+		}
+	}
+}

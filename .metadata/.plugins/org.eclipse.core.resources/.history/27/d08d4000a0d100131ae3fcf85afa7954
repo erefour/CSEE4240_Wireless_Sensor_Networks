@@ -1,0 +1,111 @@
+
+//package ....git file location
+
+
+import java.io.IOException;
+import java.net.URLEncoder;
+
+import org.apache.http.*;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.fluent.Form;
+import org.apache.http.client.fluent.Request;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
+import com.google.gson.*;
+import com.rapplogic.xbee.api.ApiId;
+import com.rapplogic.xbee.api.AtCommand;
+import com.rapplogic.xbee.api.XBee;
+import com.rapplogic.xbee.api.XBeeResponse;
+import com.rapplogic.xbee.api.zigbee.ZNetRxResponse;
+import com.rapplogic.xbee.api.zigbee.ZNetTxRequest;
+import com.rapplogic.xbee.util.ByteUtils;
+
+
+public class Gateway{
+
+	XBee xbee = new XBee();
+	
+	public Gateway() throws Exception{
+	try{
+		xbee.open("COM14", 9600);
+	
+		while (true){
+			Thread.sleep(100);	//only execute one time a second (Better sugg
+			try{
+				XBeeResponse response = xbee.getResponse(10);
+				
+				if(response.getApiId() == ApiId.ZNET_RX_RESPONSE){
+					//Successfully received a ZNET RX packet
+					ZNetRxResponse rxPacket =(ZNetRxResponse) response;
+					System.out.println("Received an RX packet");
+					System.out.println("Address of RX Sender: " + rxPacket.getRemoteAddress64());
+					System.out.println("Address of RX Sender as a string: " + URLEncoder.encode(rxPacket.getRemoteAddress64().toString(), "UTF-8"));				//TODO: make a variable to store the 64bit Address of the xbee radio in the format needed to store in the database 
+					
+					int[] dataRX =rxPacket.getData();
+					System.out.println("Data: " + dataRX[0] + ", " + dataRX[1]);
+					int readingRXData = dataRX[0] | dataRX[1] <<8;
+					System.out.println("Reading of RX Data[]: " + readingRXData);
+					
+					//Connecting to the Database PHP File to access the database in order to store data sent from the radio
+					//into the appropriate tables 
+					String httpResponse = Request.Get("http://localhost/logSensorData.php" 
+								+ "password=" 
+								+ "radio_address = " //TODO: Set equal to the variable that stored the 64 bit addr.
+								+ "temperature = "	//TODO: Set equal to the data for temperature
+								+ "humidity = "
+								+ "pressure = "
+								+ "gps = ")
+								.execute().returnContent().asString();
+						//NOTE: mote_id is determined on the PHP File using the xbee_address
+					//"password=penigun&").execute().returnContent().asString();
+				}else{
+					System.out.println("Did not receive a packet");
+				}
+				
+			} //Inner try
+			catch(Exception e){
+			}//catch
+			
+			//Poll the Server for the status of each of the motes in our network
+			/*	String httpResponse = Request.Get("http://localhost/logSensorData.php" + 
+						"password=").execute().returnContent().asString();
+						//"password=penigun&").execute().returnContent().asString();
+				System.out.println(httpResponse);
+				JsonParser parser = new JsonParser();
+				JsonElement f = parser.parse(httpResponse);
+				JsonObject j = f.getAsJsonObject();
+				System.out.println(j.get("succes").getAsBoolean()); //asking json object to get the field "succes" from database
+				JsonArray motes = j.get("data").getAsJsonArray(); //Thats the field name being returned from db query (have to write that in php file)
+				for(int i -0li<motes.size();i++){
+					//JsonObject obj = motes.get(i).getAsJsonOnject; ==replace motes.get... with just obj
+					String radio_address =motes.get(i).getAsJsonObject().get("radio_address").getAsString(); //System.out.println(motes...
+					JsonElement mailbox = obj.get("mailbox");
+						
+					if(!mailbox.isJsonNull()){
+							XBeeAddress64 xbeeAddr64 = new XBeeAddress64 //Enter the radio address in db as "00 13 A2 00 40 86 83 9D" so it'll be easily to use as a paramater in the XBeeAdd64 constructuer (int[])
+							ZNetTxRequest tx = new ZNetTxRequest(dest. pa_)
+							String message = mailbox.getAsString(); 
+							System.out.println(message);
+					}
+					int light_status = motes.get(i).getAsJSonObject().get("light").getAsInt();
+					System.out.println(light_status);
+					//NOTE that these mailbox, light, radio_addr, etc are all columns inside Dr. Johnsen's db--in the mote table
+				}
+			*/
+			//After polling, we need to create an XBee Transmit package to send to the mote
+			
+		} //While
+	}//First Try
+  	finally{
+		if(xbee.isConnected()){
+			xbee.close();
+		}
+	}//finally
+	}  //(Public Gateway throws)
+	
+	public static void main(String[] args) throws Exception{
+		new Gateway();
+	}
+	
+}
